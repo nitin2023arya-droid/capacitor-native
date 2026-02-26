@@ -12,13 +12,12 @@ async function exportData() {
     // Check if running in Capacitor native
     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
         try {
-            const { Filesystem, Directory } = await import('@capacitor/filesystem');
             const base64 = await blobToBase64(blob);
+            const { Filesystem } = window.Capacitor.Plugins;
             await Filesystem.writeFile({
                 path: fileName,
                 data: base64,
-                directory: Directory.Documents,  // Saves to Documents folder
-                recursive: false
+                directory: 'DOCUMENTS'  // Saves to Documents folder
             });
             alert(`Backup saved to Documents/${fileName}`);
         } catch (error) {
@@ -26,7 +25,7 @@ async function exportData() {
             alert('Export failed: ' + error.message);
         }
     } else {
-        // Fallback to web method
+        // Fallback to web method (for development)
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
