@@ -61,7 +61,7 @@ function resolveLedgerParticular(e) {
     return `${metal} ${e.action || e.type || ''}`.trim();
 }
 
-// ✅ NEW: Helper to convert Blob to base64 (required for Filesystem)
+// Helper to convert Blob to base64 (required for Filesystem)
 function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -71,7 +71,6 @@ function blobToBase64(blob) {
     });
 }
 
-// ✅ MODIFIED: Now async and uses Capacitor Filesystem on native
 async function exportCustomerPDF(customerId) {
     const fromDate = document.getElementById('pdf-from')?.value;
     const toDate = document.getElementById('pdf-to')?.value;
@@ -378,33 +377,26 @@ doc.text(
     doc.setFontSize(9);
     doc.text('This is a computer-generated statement.', 105, y, { align: 'center' });
 
-    // ========== REPLACE SAVE WITH CAPACITOR FILESYSTEM ==========
+    // ========== ✅ FIXED: USE GLOBAL PLUGIN INSTEAD OF DYNAMIC IMPORT ==========
     const fileName = `${customer.name.replace(/\s+/g, '_')}_Account.pdf`;
-
-    // Generate PDF as blob
     const pdfBlob = doc.output('blob');
 
-    // Check if running inside Capacitor native
     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
         try {
-            // Dynamically import the plugin (it's already installed)
-            const { Filesystem, Directory } = await import('@capacitor/filesystem');
-
             const base64 = await blobToBase64(pdfBlob);
+            const { Filesystem } = window.Capacitor.Plugins;   // ✅ Direct global access
             await Filesystem.writeFile({
                 path: fileName,
                 data: base64,
-                directory: Directory.Documents,   // Saves to Documents folder
-                recursive: false
+                directory: 'DOCUMENTS'   // ✅ String constant works with Capacitor 6
             });
-
             alert(`PDF saved to Documents/${fileName}`);
         } catch (error) {
             console.error('PDF export failed', error);
             alert('PDF export failed: ' + error.message);
         }
     } else {
-        // Fallback to web method (for development in browser)
+        // Fallback for browser (development)
         doc.save(fileName);
     }
 
